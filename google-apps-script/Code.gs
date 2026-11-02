@@ -14,10 +14,10 @@ const FIELD_ALIASES = {
  codriverDiscord: ['DC ID(領航員)','領航員 Discord 帳號','領航員 DC','領航員Discord'],
  driverERLC: ['ERLC ID(賽車手)','駕駛 ERLC ID','駕駛 ERLC','駕駛ERLC'],
  codriverERLC: ['ERLC ID(領航員)','領航員 ERLC ID','領航員 ERLC','領航員ERLC'],
- vehicle: ['車輛型號','車輛','車型','賽車型號'],
+ vehicle: ['使用車輛','車輛型號','車輛','車型','賽車型號'],
  color: ['車輛顏色','車色','車身顏色'],
  email: ['電子郵件地址','電子郵件','Email Address','Email','電子郵件信箱'],
- agree: ['同意賽事規則','規則確認','是否同意規則','已閱讀並同意賽事規則']
+ agree: ['是否查看過規則','同意賽事規則','規則確認','是否同意規則','已閱讀並同意賽事規則']
 };
 const ALLOWED_CARS = [
  'BKM_Hofmeister_F_2021','Bullhorn Prancer Fury Widebody 2020','Chevlon Corbeta X08 2014'
@@ -50,8 +50,8 @@ function onRegistrationSubmit(e) {
   const a = e.namedValues;
   const registration = {};
   Object.keys(FIELD_ALIASES).forEach(k => registration[k] = getValue_(a, FIELD_ALIASES[k]));
-  if (!registration.team || !registration.driver || !registration.codriver)
-    throw new Error('缺少團隊名稱、賽車手或領航員 Roblox ID，請檢查 FIELD_ALIASES：' + JSON.stringify(registration));
+  if (!registration.team || !registration.driver || !registration.codriver || !registration.vehicle)
+    throw new Error('缺少團隊名稱、賽車手／領航員 Roblox ID 或使用車輛，請檢查 FIELD_ALIASES：' + JSON.stringify(registration));
   // Preserve the original response text; car normalization happens in review.
   const id = 'registration_' + Utilities.getUuid().replace(/-/g,'');
   const payload = {
