@@ -55,7 +55,7 @@ export default {
         const z=Number(raw.LocationZ??raw.locationZ??p.LocationZ);
         const id=String(p.UserId??p.UserID??p.userId??p.user_id??String(p.Player??p.player??'').split(':').pop());
         const name=String(p.Player??p.player??p.Name??p.name??'').split(':')[0];
-        if(!/^\\d+$/.test(id)||!Number.isFinite(x)||!Number.isFinite(z))return null;
+        if(!/^\d+$/.test(id)||!Number.isFinite(x)||!Number.isFinite(z))return null;
         return {userId:id,name,x,z};
       }).filter(Boolean);
       return json({ok:true,playerCount:players.length,positions,updatedAt:new Date().toISOString(),autoTiming:false});
