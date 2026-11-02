@@ -16,10 +16,10 @@ const json = (body, status=200) => new Response(JSON.stringify(body), {
 });
 // Isolate-local guard plus Cloudflare edge cache to reduce repeated ERLC requests.
 let nextAllowedAt=0;
-const MIN_INTERVAL_MS=60000;
+const MIN_INTERVAL_MS=5000;
 const retrySeconds=value=>{
- const n=Number(value);if(Number.isFinite(n)&&n>=0)return Math.min(3600,Math.max(30,Math.ceil(n)));
- const t=Date.parse(value||'');return Number.isFinite(t)?Math.min(3600,Math.max(30,Math.ceil((t-Date.now())/1000))):120;
+ const n=Number(value);if(Number.isFinite(n)&&n>=0)return Math.min(3600,Math.max(5,Math.ceil(n)));
+ const t=Date.parse(value||'');return Number.isFinite(t)?Math.min(3600,Math.max(5,Math.ceil((t-Date.now())/1000))):120;
 };
 export default {
   async fetch(request, env) {
@@ -77,7 +77,7 @@ export default {
         return {userId:id,name,x,z};
       }).filter(Boolean);
       const result={ok:true,playerCount:players.length,positions,updatedAt:new Date().toISOString(),autoTiming:false};
-      if(cache)await cache.put(cacheKey,new Response(JSON.stringify(result),{headers:{"Cache-Control":"public, max-age=60"}}));
+      if(cache)await cache.put(cacheKey,new Response(JSON.stringify(result),{headers:{"Cache-Control":"public, max-age=5"}}));
       return json(result);
     } catch { return json({error:"erlc_network_error"},502); }
   }
