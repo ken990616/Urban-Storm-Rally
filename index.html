@@ -66,11 +66,12 @@ const finish=drivers.filter(d=>d.status==='finished'&&timeOf(d)!==null).sort((a,
 $('leaderboard').innerHTML=finish.length?finish.map((d,i)=>`<div class="race-item"><span><b class="rank">${i+1}</b><b class="car-number">#${safe(d.number)}</b>${safe(d.name)}</span><span class="timer-value">${displayTime(timeOf(d)+(Number(d.penaltyMs)||0))}</span></div>`).join(''):'尚無完賽成績';
 document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{if(admin&&confirm('確定移除車手？'))try{await deleteDoc(doc(db,'drivers',b.dataset.delete));}catch(e){toast(e.code)}});
 }
-let erlcWorkerUrl=localStorage.getItem('rallyWorkerUrl')||'',erlcInterval=null,erlcBusy=false,livePositions=[];
+let erlcWorkerUrl=localStorage.getItem('rallyWorkerUrl')||'',erlcInterval=null,erlcBusy=false,livePositions=[],erlcCooldownUntil=0;
 $('erlcWorker').value=erlcWorkerUrl;
 const erlcMsg=message=>{$('erlcResult').textContent=message;};
 async function erlcFetch(){
  if(!admin||!erlcWorkerUrl||erlcBusy)return false;
+ if(Date.now()<erlcCooldownUntil){erlcMsg('ERLC API 冷卻中，約 '+Math.ceil((erlcCooldownUntil-Date.now())/1000)+' 秒後再試');return false;}
  const user=auth.currentUser;
  if(!user)return false;
  erlcBusy=true;
@@ -78,6 +79,7 @@ async function erlcFetch(){
   const token=await user.getIdToken();
   const response=await fetch(erlcWorkerUrl.replace(/\/$/,'')+'/players',{headers:{Authorization:'Bearer '+token},cache:'no-store'});
   const data=await response.json().catch(()=>({}));
+  if(response.status===429){const wait=Math.max(30,Number(data.retryAfter)||120);erlcCooldownUntil=Date.now()+wait*1000;throw new Error('ERLC API 請求過於頻繁，請等待約 '+wait+' 秒');}
   if(!response.ok)throw new Error(data.error==='server_key_not_configured'?'尚未在 Cloudflare 設定 ERLC_SERVER_KEY':data.error==='invalid_login'?'Firebase 登入驗證失敗':data.error==='referee_only'?'此帳號沒有裁判權限':data.error==='erlc_api_error'?'ERLC API 回應錯誤 '+(data.status||''):data.error==='auth_service_unavailable'?'Firebase 驗證服務暫時無法使用':data.error||'HTTP '+response.status);
   if(typeof data.playerCount!=='number')throw new Error('Worker 回傳格式不正確');
   $('playerCount').textContent=data.playerCount;
@@ -101,7 +103,7 @@ $('erlcTest').onclick=async()=>{
 };
 $('erlcStart').onclick=()=>{
  if(!admin||!erlcWorkerUrl||erlcInterval)return;
- erlcInterval=setInterval(erlcFetch,30000);
+ erlcInterval=setInterval(erlcFetch,60000);
  $('erlcStart').disabled=true;$('erlcStop').disabled=false;
  erlcFetch();
 };
