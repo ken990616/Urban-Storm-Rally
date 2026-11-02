@@ -1,11 +1,10 @@
-/**
- * Urban Storm Rally 2026 - Google Forms -> Firestore
- * Installable "On form submit" trigger attached to the response spreadsheet.
- * IMPORTANT: Bind this Apps Script to the SAME Google Cloud project as Firebase,
- * grant script runner Cloud Datastore User IAM, enable Firestore API, add OAuth scope.
- * Never publish this script as an anonymous web app.
+/** Urban Storm Rally 2026 - Google Forms -> Firestore (Spark / Email Password)
+ * Bind to the Google Form response spreadsheet; install onFormSubmit trigger.
+ * Store FIREBASE_SYNC_EMAIL and FIREBASE_SYNC_PASSWORD in Script Properties.
+ * The sync account must have only create permission for privateRace registration documents.
  */
 const PROJECT_ID = 'urban-storm-rally-c775d';
+const FIREBASE_API_KEY = 'AIzaSyBv0VJ3WbalJs7wLF3CZsTj-2HJtOuea38';
 const DEADLINE_TAIPEI = '2026-11-19T23:59:59+08:00';
 const FIELD_ALIASES = {
  team: ['車隊名稱','隊伍名稱','車隊名'],
@@ -29,6 +28,17 @@ function getValue_(answers, aliases) {
     if (exact) return String((answers[exact] || [''])[0] || '').trim();
   }
   return '';
+}
+function firebaseIdToken_() {
+ const props = PropertiesService.getScriptProperties();
+ const email=props.getProperty('FIREBASE_SYNC_EMAIL');
+ const password=props.getProperty('FIREBASE_SYNC_PASSWORD');
+ if(!email||!password)throw new Error('請先在指令碼屬性設定 FIREBASE_SYNC_EMAIL / FIREBASE_SYNC_PASSWORD');
+ const res=UrlFetchApp.fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+encodeURIComponent(FIREBASE_API_KEY),{
+   method:'post',contentType:'application/json',payload:JSON.stringify({email,password,returnSecureToken:true}),muteHttpExceptions:true
+ });
+ if(res.getResponseCode()!==200)throw new Error('Firebase 登入失敗：'+res.getContentText());
+ return JSON.parse(res.getContentText()).idToken;
 }
 function onRegistrationSubmit(e) {
   if (!e || !e.namedValues) throw new Error('必須由試算表「表單提交時」安裝型觸發器執行');
@@ -67,7 +77,7 @@ function onRegistrationSubmit(e) {
   const response = UrlFetchApp.fetch(url, {
     method:'patch',
     contentType:'application/json',
-    headers:{Authorization:'Bearer ' + ScriptApp.getOAuthToken()},
+    headers:{Authorization:'Bearer ' + firebaseIdToken_()},
     payload:JSON.stringify(payload),
     muteHttpExceptions:true
   });
