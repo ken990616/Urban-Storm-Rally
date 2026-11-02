@@ -51,7 +51,8 @@ function setView(next){adminView=!!next&&admin;document.body.classList.toggle('a
 $('viewSwitch').onclick=()=>{setView(!adminView);};
 onAuthStateChanged(auth,u=>{admin=!!u&&u.uid===ADMIN_UID;$('adminLogin').classList.toggle('hidden',!!u);$('logout').classList.toggle('hidden',!u);$('connection').textContent=admin?'● 裁判已登入':u?'● 已登入（無管理權限）':'● 公開觀眾模式';$('connection').className='badge'+(admin?' ok':u?' error':'');setView(admin);if(u&&!admin)toast('帳號已登入，但 UID 未獲管理權限');});
 const statusErr=e=>{$('apiStatus').textContent='Firestore 讀取失敗：'+e.code;toast('請檢查 Firestore Rules');};
-onSnapshot(doc(db,'races','main'),snap=>{settings=snap.exists()?snap.data():{};renderMap();$('apiStatus').textContent='Firestore 已連線 · ERLC API 尚未部署';},statusErr);
+onSnapshot(doc(db,'races','main'),snap=>{settings=snap.exists()?snap.data():{};renderMap();},statusErr);
+onSnapshot(doc(db,'races','apiStatus'),snap=>{const d=snap.exists()?snap.data():null;const el=$('apiStatus');if(!el)return;if(!d){el.textContent='ERLC 雲端監控尚未部署';return;}const when=d.lastSuccess?.toDate?.();el.textContent=d.status==='connected'?'ERLC API 已連線 · 玩家 '+(d.playerCount??'—')+' 人'+(when?' · 更新 '+when.toLocaleTimeString('zh-TW'):''):'ERLC API 尚未連線／連線異常';if(d.playerCount!=null)$('playerCount').textContent=d.playerCount;},e=>{if($('apiStatus'))$('apiStatus').textContent='ERLC 狀態讀取失敗';});
 onSnapshot(collection(db,'drivers'),snap=>{drivers=snap.docs.map(d=>({id:d.id,...d.data()}));renderDrivers();},statusErr);
 async function saveSettings(patch){if(!admin)return toast('需要管理員權限');try{settings={...settings,...patch};await setDoc(doc(db,'races','main'),settings,{merge:true});toast('已同步至 Firestore');}catch(e){toast('儲存失敗：'+e.code);}}
 function displayTime(ms){if(!Number.isFinite(ms)||ms<0)return '00:00.000';const m=Math.floor(ms/60000),sec=Math.floor(ms%60000/1000),frac=Math.floor(ms%1000);return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0')+'.'+String(frac).padStart(3,'0')}
