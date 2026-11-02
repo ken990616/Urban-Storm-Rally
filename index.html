@@ -49,7 +49,7 @@ $('adminLogin').onclick=async()=>{let email=prompt('管理員電子郵件');if(e
 $('logout').onclick=()=>signOut(auth);
 function setView(next){adminView=!!next&&admin;document.body.classList.toggle('admin-view',adminView);$('viewSwitch').textContent=adminView?'👥 觀眾畫面':'🎛️ 裁判管理中心';$('viewSwitch').classList.toggle('hidden',!admin);document.querySelectorAll('.admin').forEach(el=>el.classList.toggle('hidden',!admin));if(admin)renderDrivers();}
 $('viewSwitch').onclick=()=>{setView(!adminView);};
-onAuthStateChanged(auth,u=>{if(!u||u.uid!==ADMIN_UID){if(erlcInterval)clearInterval(erlcInterval);erlcInterval=null;$('erlcStart').disabled=true;$('erlcStop').disabled=true;}admin=!!u&&u.uid===ADMIN_UID;if(!admin)livePositions=[];$('adminLogin').classList.toggle('hidden',!!u);$('logout').classList.toggle('hidden',!u);$('connection').textContent=admin?'● 裁判已登入':u?'● 已登入（無管理權限）':'● 公開觀眾模式';$('connection').className='badge'+(admin?' ok':u?' error':'');setView(admin);if(u&&!admin)toast('帳號已登入，但 UID 未獲管理權限');});
+onAuthStateChanged(auth,u=>{if(!u||u.uid!==ADMIN_UID){if(erlcInterval)clearInterval(erlcInterval);erlcInterval=null;$('erlcStart').disabled=true;$('erlcStop').disabled=true;}admin=!!u&&u.uid===ADMIN_UID;if(!admin)livePositions=[];$('adminLogin').classList.toggle('hidden',!!u);$('logout').classList.toggle('hidden',!u);$('connection').textContent=admin?'● 裁判已登入':u?'● 已登入（無管理權限）':'● 公開觀眾模式';$('connection').className='badge'+(admin?' ok':u?' error':'');setView(admin);if(admin&&erlcWorkerUrl){startErlcAutoSync();erlcFetch();}if(u&&!admin)toast('帳號已登入，但 UID 未獲管理權限');});
 const statusErr=e=>{$('apiStatus').textContent='Firestore 讀取失敗：'+e.code;toast('請檢查 Firestore Rules');};
 onSnapshot(doc(db,'races','main'),snap=>{settings=snap.exists()?snap.data():{};renderMap();},statusErr);
 onSnapshot(doc(db,'races','apiStatus'),snap=>{const d=snap.exists()?snap.data():null;const el=$('apiStatus');if(!el)return;if(!d){el.textContent='ERLC 雲端監控尚未部署';return;}const when=d.lastSuccess?.toDate?.();el.textContent=d.status==='connected'?'ERLC API 已連線 · 玩家 '+(d.playerCount??'—')+' 人'+(when?' · 更新 '+when.toLocaleTimeString('zh-TW'):''):'ERLC API 尚未連線／連線異常';if(d.playerCount!=null)$('playerCount').textContent=d.playerCount;},e=>{if($('apiStatus'))$('apiStatus').textContent='ERLC 狀態讀取失敗';});
@@ -69,6 +69,13 @@ document.querySelectorAll('[data-delete]').forEach(b=>b.onclick=async()=>{if(adm
 let erlcWorkerUrl=localStorage.getItem('rallyWorkerUrl')||'',erlcInterval=null,erlcBusy=false,livePositions=[],erlcCooldownUntil=0;
 $('erlcWorker').value=erlcWorkerUrl;
 const erlcMsg=message=>{$('erlcResult').textContent=message;};
+function startErlcAutoSync(){
+ if(!admin||!erlcWorkerUrl||erlcInterval)return;
+ erlcInterval=setInterval(()=>{if(document.visibilityState==='visible')erlcFetch();},60000);
+ $('erlcStart').disabled=true;$('erlcStop').disabled=false;
+ erlcMsg('已開啟自動同步，每 60 秒更新位置');
+}
+
 const calibrationSelect=$('calibrationPlayer');
 function updateCalibrationPlayers(){
  const previous=calibrationSelect.value;
@@ -96,7 +103,7 @@ async function erlcFetch(){
   livePositions=Array.isArray(data.positions)?data.positions:[];
   updateCalibrationPlayers();
   renderMap();
-  erlcMsg('Worker 連線成功 · ERLC 線上玩家 '+data.playerCount+' 人 · 有座標 '+livePositions.length+' 人 · '+new Date().toLocaleTimeString('zh-TW')+'（尚未啟用自動計時）');
+  erlcMsg('Worker 連線成功 · ERLC 線上玩家 '+data.playerCount+' 人 · 有座標 '+livePositions.length+' 人 · '+new Date().toLocaleTimeString('zh-TW')+(erlcInterval?' · 自動同步中（60 秒）':'')+'（尚未啟用自動計時）');
   return true;
  }catch(e){
   erlcMsg('連線失敗：'+(e instanceof TypeError?'Worker 網址錯誤、網路或 CORS 問題':e.message));
@@ -110,12 +117,11 @@ $('erlcTest').onclick=async()=>{
  if(!/^https:\/\/[a-z0-9.-]+\.workers\.dev$/i.test(value))return showNotice('請輸入 Cloudflare Workers 的完整 HTTPS 網址（workers.dev）');
  erlcWorkerUrl=value;localStorage.setItem('rallyWorkerUrl',value);
  erlcMsg('正在透過 Cloudflare Workers 測試…');
- const ok=await erlcFetch();$('erlcStart').disabled=!ok;
+ const ok=await erlcFetch();if(ok)startErlcAutoSync();else $('erlcStart').disabled=true;
 };
 $('erlcStart').onclick=()=>{
  if(!admin||!erlcWorkerUrl||erlcInterval)return;
- erlcInterval=setInterval(erlcFetch,60000);
- $('erlcStart').disabled=true;$('erlcStop').disabled=false;
+ startErlcAutoSync();
  erlcFetch();
 };
 $('erlcStop').onclick=()=>{
