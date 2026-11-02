@@ -3,9 +3,16 @@
 #refView{display:none;min-height:850px}#refFrame{width:100%;height:1200px;border:0;background:#090b10;display:block}body.refmode main,body.refmode .foot{display:none}body.refmode #refView{display:block}body.refmode header{position:sticky;top:0;z-index:20}body.refmode #fullscreenBtn{display:none}#switchBtn{background:#e72b3d;border-color:#e72b3d}#switchBtn:hover{background:#fa4051}
 </style><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script><style>
 #authShade{position:fixed;inset:0;background:#080b10ed;z-index:100;display:none;align-items:center;justify-content:center;padding:16px}#authCard{max-width:410px;width:100%;padding:25px;border:1px solid #a52c3b;border-radius:14px;background:#181d27}#authCard input{display:block;width:100%;margin:12px 0;padding:13px;background:#10141c;color:white;border:1px solid #465063;border-radius:8px}#authCard button{background:#e7283a;color:white;border:0;padding:12px;border-radius:8px;cursor:pointer}#authError{color:#ff9ca7;font-size:13px}#cloudState{color:#aab3c2;font-size:12px}
-</style></head><body><header><div><div class="brand">URBAN <b>STORM</b> RALLY 2026</div><div class="sub">LIVE RACE TIMING · SPECTATOR VIEW</div></div><div class="top"><span class="muted" id="clock">--:--:--</span><button id="switchBtn" onclick="switchView()">⚙️ 裁判控制中心</button><button id="fullscreenBtn" onclick="toggleFullscreen()">⛶ 全螢幕觀看</button></div></header><main><div class="hero"><div><div class="eyebrow">ERLC RALLY CHAMPIONSHIP</div><h1>RACE <span style="color:var(--red)">LIVE</span> CENTER</h1><div class="muted">2026 / 11 / 22 · 19:30（台灣時間）</div></div><div><div class="badge" id="status">● 等待賽事開始</div><div class="hint" style="margin-top:12px" id="source">展示模式 · 尚未連接正式伺服器</div></div></div>
+</style></head><body><header><div><div class="brand">URBAN <b>STORM</b> RALLY 2026</div><div class="sub">LIVE RACE TIMING · SPECTATOR VIEW</div></div><div class="top"><span class="muted" id="clock">--:--:--</span><button id="reviewBtn" onclick="rallyReviewToggle()" style="display:none">📝 報名審核</button><button id="switchBtn" onclick="switchView()">⚙️ 裁判控制中心</button><button id="fullscreenBtn" onclick="toggleFullscreen()">⛶ 全螢幕觀看</button></div></header><main><div class="hero"><div><div class="eyebrow">ERLC RALLY CHAMPIONSHIP</div><h1>RACE <span style="color:var(--red)">LIVE</span> CENTER</h1><div class="muted">2026 / 11 / 22 · 19:30（台灣時間）</div></div><div><div class="badge" id="status">● 等待賽事開始</div><div class="hint" style="margin-top:12px" id="source">展示模式 · 尚未連接正式伺服器</div></div></div>
 <div class="stats"><div class="box"><div class="label">參賽車隊</div><div class="value" id="total">0</div></div><div class="box"><div class="label">正在比賽</div><div class="value" id="running">0</div></div><div class="box"><div class="label">已完賽</div><div class="value" id="finished">0</div></div><div class="box"><div class="label">最快有效成績</div><div class="value" id="fastest" style="font-size:23px">--:--.---</div></div><div class="box"><div class="label">完成比例</div><div class="value" id="percent">0%</div></div></div>
-<div class="layout"><div class="card"><div class="top"><h2>🏆 即時成績排行榜</h2><span class="muted" style="font-size:12px">FIN 成績依最終時間排序</span></div><div class="scroll"><table><thead><tr><th>排名</th><th>車號</th><th>車隊 / 賽車手</th><th>狀態</th><th>計時 / 原始時間</th><th>罰秒</th><th>最終成績</th><th>差距</th></tr></thead><tbody id="ranking"></tbody></table></div><p class="hint">RUN 為即時顯示計時；FIN 才計入正式排序。計時毫秒為介面顯示精度，並不代表實際測量精度。</p></div><div class="side"><div class="card"><h2>📡 賽事資訊</h2><div class="line"><span class="muted">目前狀態</span><b id="sideStatus">待命</b></div><div class="line"><span class="muted">領先車隊</span><b id="leader">尚無</b></div><div class="line"><span class="muted">下一支起跑</span><b id="next">--</b></div><div class="line"><span class="muted">目前最快</span><b id="bestTeam">尚無</b></div><div class="progress"><div class="bar" id="bar"></div></div><div class="hint" id="progressText">等待車隊完賽</div></div><div class="card"><h2>🏁 最近五支完賽車隊</h2><div id="recent" class="muted">目前沒有完賽紀錄</div></div><div class="card"><h2>📣 賽事公告</h2><p class="muted">賽事預定於 2026 年 11 月 22 日 19:30 舉行。</p><p class="hint">正式版將顯示裁判發布的賽事公告與紅旗通知；本展示版不提供編輯功能。</p></div></div></div></main><div id="authShade"><div id="authCard"><h2>🔐 裁判登入</h2><p>請使用已授權的 Firebase 裁判帳號登入。</p><input type="email" id="refEmail" placeholder="電子郵件"><input type="password" id="refPassword" placeholder="密碼"><p id="authError"></p><button id="loginBtn">登入裁判控制中心</button> <button id="cancelLogin" style="background:#343b48">取消</button> <button id="initBtn" style="background:#087d54;display:none">初始化賽事</button></div></div><div id="refView"><iframe id="refFrame" title="裁判控制中心"></iframe></div><div class="foot"><span id="cloudState">Firebase 連線中…</span><br>URBAN STORM RALLY 2026 · SPECTATOR PREVIEW · 唯讀觀眾介面</div>
+<div class="layout"><div class="card"><div class="top"><h2>🏆 即時成績排行榜</h2><span class="muted" style="font-size:12px">FIN 成績依最終時間排序</span></div><div class="scroll"><table><thead><tr><th>排名</th><th>車號</th><th>車隊 / 賽車手</th><th>狀態</th><th>計時 / 原始時間</th><th>罰秒</th><th>最終成績</th><th>差距</th></tr></thead><tbody id="ranking"></tbody></table></div><p class="hint">RUN 為即時顯示計時；FIN 才計入正式排序。計時毫秒為介面顯示精度，並不代表實際測量精度。</p></div><div class="side"><div class="card"><h2>📡 賽事資訊</h2><div class="line"><span class="muted">目前狀態</span><b id="sideStatus">待命</b></div><div class="line"><span class="muted">領先車隊</span><b id="leader">尚無</b></div><div class="line"><span class="muted">下一支起跑</span><b id="next">--</b></div><div class="line"><span class="muted">目前最快</span><b id="bestTeam">尚無</b></div><div class="progress"><div class="bar" id="bar"></div></div><div class="hint" id="progressText">等待車隊完賽</div></div><div class="card"><h2>🏁 最近五支完賽車隊</h2><div id="recent" class="muted">目前沒有完賽紀錄</div></div><div class="card"><h2>📣 賽事公告</h2><p class="muted">賽事預定於 2026 年 11 月 22 日 19:30 舉行。</p><p class="hint">正式版將顯示裁判發布的賽事公告與紅旗通知；本展示版不提供編輯功能。</p></div></div></div></main><div id="authShade"><div id="authCard"><h2>🔐 裁判登入</h2><p>請使用已授權的 Firebase 裁判帳號登入。</p><input type="email" id="refEmail" placeholder="電子郵件"><input type="password" id="refPassword" placeholder="密碼"><p id="authError"></p><button id="loginBtn">登入裁判控制中心</button> <button id="cancelLogin" style="background:#343b48">取消</button> <button id="initBtn" style="background:#087d54;display:none">初始化賽事</button></div></div><div id="reviewView" style="display:none;max-width:1280px;margin:25px auto;padding:0 18px">
+ <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px"><h2>📝 車隊報名審核</h2><button onclick="rallyReviewToggle()">← 返回裁判計時</button></div>
+ <p class="muted">Google 表單 → Apps Script → Firebase。只有已授權裁判可查看報名資料。審核截止：2026/11/19 23:59（台灣時間）。</p>
+ <div class="row" style="display:flex;gap:10px;margin-bottom:14px"><input id="regSearch" placeholder="搜尋車隊、駕駛、領航員" oninput="rallyReviewRender()" style="padding:10px;background:#171c25;color:white;border:1px solid #555;border-radius:7px"><select id="regFilter" onchange="rallyReviewRender()" style="padding:10px;background:#171c25;color:white"><option value="">全部</option><option value="PENDING">待審核</option><option value="APPROVED">已核准</option><option value="REJECTED">已駁回</option></select><span id="regCount" class="muted"></span></div>
+ <div style="overflow:auto;background:#171c25;border:1px solid #353d4c;border-radius:12px"><table style="min-width:950px;width:100%;border-collapse:collapse"><thead><tr><th>車隊</th><th>駕駛 / 領航員</th><th>車型 / 車色</th><th>報名時間</th><th>狀態</th><th>操作</th></tr></thead><tbody id="regRows"><tr><td colspan="6">登入後載入報名資料</td></tr></tbody></table></div>
+ </div>
+ <div id="regDialog" style="display:none;position:fixed;inset:0;z-index:110;background:#07090edc;align-items:center;justify-content:center;padding:16px"><div style="width:min(460px,100%);background:#181d27;border:1px solid #a93646;border-radius:12px;padding:22px"><h2 id="regDialogTitle">審核</h2><div id="regDialogInfo" class="muted"></div><label style="display:block;margin:12px 0">駁回原因（駁回時必填）<textarea id="regReason" rows="3" style="width:100%;padding:10px;background:#0d1119;color:white;border:1px solid #505a69;border-radius:7px"></textarea></label><p id="regError" style="color:#ff9fa8"></p><button id="regConfirm" style="background:#e7283a">確認</button> <button onclick="document.getElementById('regDialog').style.display='none'">取消</button></div></div>
+ <div id="refView"><iframe id="refFrame" title="裁判控制中心"></iframe></div><div class="foot"><span id="cloudState">Firebase 連線中…</span><br>URBAN STORM RALLY 2026 · SPECTATOR PREVIEW · 唯讀觀眾介面</div>
 <script>
 async function toggleFullscreen(){try{if(document.fullscreenElement){await document.exitFullscreen()}else{await document.documentElement.requestFullscreen()}}catch(e){console.warn('全螢幕切換失敗',e)}}document.addEventListener('fullscreenchange',()=>{document.getElementById('fullscreenBtn').textContent=document.fullscreenElement?'⤢ 縮小螢幕觀看':'⛶ 全螢幕觀看'});const K='usrally-preview-2' ,$=id=>document.getElementById(id),demo={teams:[{id:'01',name:'STORM RACING',driver:'Driver_01',status:'WAIT',penalty:0},{id:'02',name:'REDLINE MOTORSPORT',driver:'Driver_02',status:'WAIT',penalty:0},{id:'03',name:'NIGHT SHIFT',driver:'Driver_03',status:'WAIT',penalty:0}],mode:'READY',paused:false,red:false,redTime:0,log:[]};let s=demo,loaded=false,previous='';function safe(x){return String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function fmt(ms){if(ms==null||!Number.isFinite(ms))return'--:--.---';ms=Math.max(0,Math.round(ms));return String(Math.floor(ms/60000)).padStart(2,'0')+':'+String(Math.floor(ms%60000/1000)).padStart(2,'0')+'.'+String(ms%1000).padStart(3,'0')}function elapsed(t){if(t.status==='FIN')return t.elapsed;if(t.status!=='RUN'||!t.start)return null;return Date.now()-t.start-((s.redTime||0)-(t.redBase||0))-(s.red&&s.redAt?Date.now()-s.redAt:0)}function read(){try{let raw=localStorage.getItem(K);if(raw){let obj=JSON.parse(raw);if(obj&&Array.isArray(obj.teams)){s=obj;loaded=true}}else{loaded=false;s=demo}}catch{loaded=false;s=demo}}function render(){read();let teams=s.teams||[],fin=teams.filter(t=>t.status==='FIN'&&typeof t.elapsed==='number').sort((a,b)=>(a.elapsed+(a.penalty||0)*1000)-(b.elapsed+(b.penalty||0)*1000)),run=teams.filter(t=>t.status==='RUN'),waiting=teams.filter(t=>t.status==='WAIT'),done=teams.filter(t=>['FIN','DNF','DNS','DSQ'].includes(t.status));$('clock').textContent=new Date().toLocaleTimeString('zh-TW',{hour12:false,timeZone:'Asia/Taipei'});$('source').textContent=loaded?'讀取同一瀏覽器的本機展示資料 · 非跨裝置即時同步':'展示模式 · 尚未連接正式伺服器';$('status').textContent=s.red?'🚩 紅旗暫停':s.mode==='LIVE'?'● 賽事進行中':'● 等待賽事開始';$('sideStatus').textContent=s.red?'紅旗暫停':s.paused?'暫停發車':s.mode==='LIVE'?'進行中':'待命';$('total').textContent=teams.length;$('running').textContent=run.length;$('finished').textContent=fin.length;$('fastest').textContent=fin.length?fmt(fin[0].elapsed+(fin[0].penalty||0)*1000):'--:--.---';let pct=teams.length?Math.round(done.length/teams.length*100):0;$('percent').textContent=pct+'%';$('bar').style.width=pct+'%';$('progressText').textContent=`${done.length} / ${teams.length} 支車隊已結束賽事`;$('leader').textContent=fin.length?'#'+fin[0].id+' '+fin[0].name:'尚無有效完賽成績';$('bestTeam').textContent=fin.length?'#'+fin[0].id+' '+fmt(fin[0].elapsed+(fin[0].penalty||0)*1000):'尚無';$('next').textContent=waiting.length?'#'+waiting[0].id+' '+waiting[0].name:'--';let order=[...fin,...run,...waiting,...teams.filter(t=>!['FIN','RUN','WAIT'].includes(t.status))];$('ranking').innerHTML=order.map(t=>{let rank=fin.indexOf(t)+1,raw=elapsed(t),final=t.status==='FIN'?raw+(t.penalty||0)*1000:null,gap=rank&&fin.length?final-(fin[0].elapsed+(fin[0].penalty||0)*1000):null;return `<tr><td><b>${rank||'—'}</b></td><td><b>#${safe(t.id)}</b></td><td><b>${safe(t.name)}</b><br><small class="muted">${safe(t.driver)}</small></td><td><span class="pill ${safe(t.status)}">${safe(({WAIT:'等待起跑 WAIT',RUN:'比賽中 RUN',FIN:'已完賽 FIN',DNF:'未能完賽 DNF',DSQ:'取消資格 DSQ',DNS:'未起跑 DNS'}[t.status]||t.status))}</span></td><td class="time">${fmt(raw)}</td><td>+${Number(t.penalty)||0}s</td><td class="time">${fmt(final)}</td><td>${rank?(gap?'+'+fmt(gap):'LEADER'):'—'}</td></tr>`}).join('')||'<tr><td colspan="8" class="muted">尚無車隊資料</td></tr>';$('recent').innerHTML=(s.log||[]).slice(0,5).map(id=>{let t=teams.find(x=>x.id===id);return t&&t.status==='FIN'?`<div class="line"><span>#${safe(t.id)} ${safe(t.name)}</span><b>${fmt(t.elapsed+(t.penalty||0)*1000)}</b></div>`:''}).join('')||'<span class="muted">目前沒有完賽紀錄</span>';let state=JSON.stringify([s.red,s.mode,fin.map(t=>[t.id,t.elapsed,t.penalty]),run.map(t=>t.id)]);if(previous&&state!==previous){$('ranking').classList.remove('pulse');void $('ranking').offsetWidth;$('ranking').classList.add('pulse')}previous=state}render();setInterval(render,250);
 </script><template id="refTemplate">&lt;!doctype html&gt;&lt;html lang="zh-Hant"&gt;&lt;meta charset="utf-8"&gt;&lt;meta name="viewport" content="width=device-width,initial-scale=1"&gt;&lt;title&gt;Urban Storm Rally 2026&lt;/title&gt;&lt;style&gt;
@@ -78,6 +85,8 @@ function switchView(){
  const entering=!document.body.classList.contains('refmode');
  if(entering&&window.rallyEnterRef&&!window.rallyEnterRef())return;
  document.body.classList.toggle('refmode',entering);
+ document.getElementById('reviewBtn').style.display=entering?'inline-block':'none';
+ document.getElementById('reviewView').style.display='none';document.getElementById('refView').style.display='';
  document.querySelector('header .sub').textContent=entering?'OFFICIAL TIMING · REFEREE CONTROL':'LIVE RACE TIMING · SPECTATOR VIEW';
  document.getElementById('switchBtn').textContent=entering?'← 返回觀眾端':'⚙️ 裁判控制中心';
  if(entering&&!refereeLoaded){const decoder=document.createElement('textarea');
@@ -170,5 +179,70 @@ try{
  window.rallyAuth=()=>auth.currentUser;
 }catch(e){error(e)}
 function exitRef(){if(document.body.classList.contains('refmode'))switchView()}
+})();
+</script>
+<script>
+(function(){
+const UID='owrElJslH9fvWxaT5vvRuGPl5TB2', deadline=new Date('2026-11-19T23:59:59+08:00').getTime();
+const auth=firebase.auth(),db=firebase.firestore(),docs=new Map();
+let unsub=null,selected=null,action=null,busy=false;
+const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const isRef=()=>auth.currentUser?.uid===UID;
+function close(){document.getElementById('regDialog').style.display='none'}
+window.rallyReviewToggle=function(){
+ if(!document.body.classList.contains('refmode')||!isRef()){alert('請先登入裁判帳號');return}
+ const view=document.getElementById('reviewView'),ref=document.getElementById('refView');
+ const opening=view.style.display==='none';
+ view.style.display=opening?'block':'none';ref.style.display=opening?'none':'block';
+ document.getElementById('reviewBtn').textContent=opening?'⏱️ 返回計時':'📝 報名審核';
+ if(opening&&!unsub)unsub=db.collection('privateRace').where('type','==','registration').onSnapshot(snap=>{
+    docs.clear();snap.forEach(d=>docs.set(d.id,{id:d.id,...d.data()}));window.rallyReviewRender();
+ },err=>{document.getElementById('regRows').innerHTML='<tr><td colspan="6">讀取失敗：'+esc(err.message)+'</td></tr>'});
+};
+window.rallyReviewRender=function(){
+ const query=document.getElementById('regSearch').value.toLowerCase(),filter=document.getElementById('regFilter').value;
+ const all=[...docs.values()].sort((a,b)=>(b.submittedAt?.toMillis?.()||0)-(a.submittedAt?.toMillis?.()||0));
+ const items=all.filter(d=>(!filter||d.status===filter)&&[d.team,d.driver,d.codriver].join(' ').toLowerCase().includes(query));
+ document.getElementById('regCount').textContent='共 '+all.length+' 筆｜待審 '+all.filter(d=>d.status==='PENDING').length+' 筆';
+ document.getElementById('regRows').innerHTML=items.map(d=>'<tr><td><b>'+esc(d.team)+'</b></td><td>'+esc(d.driver)+'<br>'+esc(d.codriver)+'</td><td>'+esc(d.vehicle)+'<br>'+esc(d.color)+'</td><td>'+esc(d.submittedAt?.toDate?.().toLocaleString('zh-TW',{timeZone:'Asia/Taipei'})||'--')+'</td><td>'+esc(d.status==='PENDING'?'待審核':d.status==='APPROVED'?'已核准 #'+d.bib:'已駁回')+'</td><td>'+(d.status==='PENDING'?'<button data-review="'+esc(d.id)+'" data-act="approve">核准</button> <button data-review="'+esc(d.id)+'" data-act="reject">駁回</button>':'—')+'</td></tr>').join('')||'<tr><td colspan="6">沒有符合條件的報名資料</td></tr>';
+ document.querySelectorAll('[data-review]').forEach(b=>b.onclick=()=>open(b.dataset.review,b.dataset.act));
+};
+function open(id,act){
+ if(Date.now()>deadline){alert('已超過 2026/11/19 23:59 審核截止時間');return}
+ const d=docs.get(id);if(!d||d.status!=='PENDING')return;
+ selected=id;action=act;document.getElementById('regDialogTitle').textContent=act==='approve'?'核准報名':'駁回報名';
+ document.getElementById('regDialogInfo').textContent=d.team+'｜'+d.driver+' / '+d.codriver;
+ document.getElementById('regReason').value='';document.getElementById('regReason').parentElement.style.display=act==='reject'?'block':'none';
+ document.getElementById('regError').textContent='';document.getElementById('regDialog').style.display='flex';
+}
+document.getElementById('regConfirm').onclick=async()=>{
+ if(busy||!isRef())return;
+ if(Date.now()>deadline){document.getElementById('regError').textContent='已超過審核截止時間';return}
+ const reason=document.getElementById('regReason').value.trim();
+ if(action==='reject'&&!reason){document.getElementById('regError').textContent='請填寫駁回原因';return}
+ busy=true;document.getElementById('regConfirm').disabled=true;
+ try{
+  const docRef=db.collection('privateRace').doc(selected),raceRef=db.collection('publicRace').doc('live');
+  await db.runTransaction(async tx=>{
+   const [regSnap,raceSnap]=await Promise.all([tx.get(docRef),tx.get(raceRef)]);
+   if(!regSnap.exists||regSnap.data().status!=='PENDING')throw Error('此報名已經審核，請重新整理');
+   if(Date.now()>deadline)throw Error('審核已截止');
+   const d=regSnap.data();
+   if(action==='approve'){
+     if(!raceSnap.exists)throw Error('尚未初始化雲端賽事');
+     const race=raceSnap.data(),teams=Array.isArray(race.teams)?race.teams:[];
+     const bib=String(Math.max(0,...teams.map(t=>Number(t.id)||0))+1).padStart(2,'0');
+     const newTeam={id:bib,name:d.team,driver:d.driver,codriver:d.codriver,car:d.vehicle,color:d.color,status:'WAIT',penalty:0,registrationId:selected};
+     tx.update(raceRef,{teams:[...teams,newTeam],updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:UID});
+     tx.update(docRef,{status:'APPROVED',bib,reviewedAt:firebase.firestore.FieldValue.serverTimestamp(),reviewedBy:UID});
+   }else{
+     tx.update(docRef,{status:'REJECTED',reason,reviewedAt:firebase.firestore.FieldValue.serverTimestamp(),reviewedBy:UID});
+   }
+  });
+  close();
+ }catch(e){document.getElementById('regError').textContent=e.message||String(e)}
+ finally{busy=false;document.getElementById('regConfirm').disabled=false}
+};
+auth.onAuthStateChanged(u=>{if(u?.uid!==UID){if(unsub){unsub();unsub=null}docs.clear();document.getElementById('reviewView').style.display='none';close()}});
 })();
 </script></body></html>
