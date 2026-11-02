@@ -48,8 +48,17 @@ export default {
         Array.isArray(payload.Players)?payload.Players:
         Array.isArray(payload.players)?payload.players:null;
       if (!players) return json({error:"unexpected_erlc_response"},502);
-      // Only return aggregate player count. No raw server details or secrets.
-      return json({ok:true,playerCount:players.length,updatedAt:new Date().toISOString(),autoTiming:false});
+      // Only expose coordinates to the authenticated referee. Never expose the server key.
+      const positions=players.map(p=>{
+        const raw=p.Location||p.location||{};
+        const x=Number(raw.LocationX??raw.locationX??p.LocationX);
+        const z=Number(raw.LocationZ??raw.locationZ??p.LocationZ);
+        const id=String(p.UserId??p.UserID??p.userId??p.user_id??String(p.Player??p.player??'').split(':').pop());
+        const name=String(p.Player??p.player??p.Name??p.name??'').split(':')[0];
+        if(!/^\\d+$/.test(id)||!Number.isFinite(x)||!Number.isFinite(z))return null;
+        return {userId:id,name,x,z};
+      }).filter(Boolean);
+      return json({ok:true,playerCount:players.length,positions,updatedAt:new Date().toISOString(),autoTiming:false});
     } catch { return json({error:"erlc_network_error"},502); }
   }
 };
