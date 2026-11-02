@@ -36,7 +36,7 @@ import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase
 import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 import {getFirestore,doc,onSnapshot,setDoc,collection,deleteDoc} from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js';
 const firebaseConfig={apiKey:'AIzaSyBv0VJ3WbalJs7wLF3CZsTj-2HJtOuea38',authDomain:'urban-storm-rally-c775d.firebaseapp.com',projectId:'urban-storm-rally-c775d',storageBucket:'urban-storm-rally-c775d.firebasestorage.app',messagingSenderId:'482395566222',appId:'1:482395566222:web:e8fc7ac8b584867ac919df'};
-const ADMIN_UID='owrElJslH9fvWxaT5vvRuGPl5TB2';
+const ADMIN_UID='adClrs4et6djk40guKB4lWSnyg73';
 const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app),$=id=>document.getElementById(id);
 let admin=false,adminView=false,mode='none',pending=null,settings={},drivers=[],zoom=1,drag=null,wasDrag=false;
 const toast=s=>{ $('toast').textContent=s;setTimeout(()=>$('toast').textContent='',3500);};
