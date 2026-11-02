@@ -14,6 +14,13 @@ const cors = {
 const json = (body, status=200) => new Response(JSON.stringify(body), {
   status, headers: {...cors, "Content-Type": "application/json; charset=utf-8"}
 });
+// Isolate-local guard plus Cloudflare edge cache to reduce repeated ERLC requests.
+let nextAllowedAt=0;
+const MIN_INTERVAL_MS=60000;
+const retrySeconds=value=>{
+ const n=Number(value);if(Number.isFinite(n)&&n>=0)return Math.min(3600,Math.max(30,Math.ceil(n)));
+ const t=Date.parse(value||'');return Number.isFinite(t)?Math.min(3600,Math.max(30,Math.ceil((t-Date.now())/1000))):120;
+};
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -37,12 +44,23 @@ export default {
     } catch { return json({error:"auth_service_unavailable"},503); }
     if (!user || user.localId !== ADMIN_UID || user.disabled) return json({error:"referee_only"},403);
     if (!env.ERLC_SERVER_KEY) return json({error:"server_key_not_configured"},503);
+    const cache=typeof caches!=='undefined'?caches.default:null;
+    const cacheKey=new Request("https://rally-cache.internal/erlc/players");
+    const cached=cache?await cache.match(cacheKey):null;
+    if(cached)return json({...await cached.json(),cached:true});
+    if(Date.now()<nextAllowedAt)return json({error:"rate_limited",retryAfter:Math.ceil((nextAllowedAt-Date.now())/1000)},429);
+    nextAllowedAt=Date.now()+MIN_INTERVAL_MS;
     try {
       const response = await fetch("https://api.erlc.gg/v2/server?Players=true",{
         headers:{"Server-Key":env.ERLC_SERVER_KEY,"Accept":"application/json"},
         signal:AbortSignal.timeout(15000)
       });
-      if (!response.ok) return json({error:"erlc_api_error",status:response.status},response.status===429?429:502);
+      if(response.status===429){
+        const wait=retrySeconds(response.headers.get("Retry-After"));
+        nextAllowedAt=Date.now()+wait*1000;
+        return json({error:"rate_limited",retryAfter:wait},429);
+      }
+      if (!response.ok) return json({error:"erlc_api_error",status:response.status},502);
       const payload = await response.json();
       const players = Array.isArray(payload)?payload:
         Array.isArray(payload.Players)?payload.Players:
@@ -58,7 +76,9 @@ export default {
         if(!/^\d+$/.test(id)||!Number.isFinite(x)||!Number.isFinite(z))return null;
         return {userId:id,name,x,z};
       }).filter(Boolean);
-      return json({ok:true,playerCount:players.length,positions,updatedAt:new Date().toISOString(),autoTiming:false});
+      const result={ok:true,playerCount:players.length,positions,updatedAt:new Date().toISOString(),autoTiming:false};
+      if(cache)await cache.put(cacheKey,new Response(JSON.stringify(result),{headers:{"Cache-Control":"public, max-age=60"}}));
+      return json(result);
     } catch { return json({error:"erlc_network_error"},502); }
   }
 };
