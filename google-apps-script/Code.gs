@@ -7,13 +7,13 @@ const PROJECT_ID = 'urban-storm-rally-c775d';
 const FIREBASE_API_KEY = 'AIzaSyBv0VJ3WbalJs7wLF3CZsTj-2HJtOuea38';
 const DEADLINE_TAIPEI = '2026-11-19T23:59:59+08:00';
 const FIELD_ALIASES = {
- team: ['車隊名稱','隊伍名稱','車隊名'],
- driver: ['駕駛 Roblox 帳號','駕駛RB','駕駛 Roblox','駕駛員 Roblox','賽車手 Roblox','駕駛'],
- codriver: ['領航員 Roblox 帳號','領航員RB','領航員 Roblox','副駕駛 Roblox','領航員'],
- driverDiscord: ['駕駛 Discord 帳號','駕駛 DC','駕駛Discord'],
- codriverDiscord: ['領航員 Discord 帳號','領航員 DC','領航員Discord'],
- driverERLC: ['駕駛 ERLC ID','駕駛 ERLC','駕駛ERLC'],
- codriverERLC: ['領航員 ERLC ID','領航員 ERLC','領航員ERLC'],
+ team: ['團隊名稱','車隊名稱','隊伍名稱','車隊名'],
+ driver: ['RB ID(賽車手)','駕駛 Roblox 帳號','駕駛RB','駕駛 Roblox','駕駛員 Roblox','賽車手 Roblox','駕駛'],
+ codriver: ['RB ID(領航員)','領航員 Roblox 帳號','領航員RB','領航員 Roblox','副駕駛 Roblox','領航員'],
+ driverDiscord: ['DC ID(賽車手)','駕駛 Discord 帳號','駕駛 DC','駕駛Discord'],
+ codriverDiscord: ['DC ID(領航員)','領航員 Discord 帳號','領航員 DC','領航員Discord'],
+ driverERLC: ['ERLC ID(賽車手)','駕駛 ERLC ID','駕駛 ERLC','駕駛ERLC'],
+ codriverERLC: ['ERLC ID(領航員)','領航員 ERLC ID','領航員 ERLC','領航員ERLC'],
  vehicle: ['車輛型號','車輛','車型','賽車型號'],
  color: ['車輛顏色','車色','車身顏色'],
  email: ['電子郵件地址','電子郵件','Email Address','Email','電子郵件信箱'],
@@ -50,8 +50,8 @@ function onRegistrationSubmit(e) {
   const a = e.namedValues;
   const registration = {};
   Object.keys(FIELD_ALIASES).forEach(k => registration[k] = getValue_(a, FIELD_ALIASES[k]));
-  if (!registration.team || !registration.driver || !registration.codriver || !registration.vehicle)
-    throw new Error('缺少必要欄位，請檢查 FIELD_ALIASES 是否與 Google 表單題目一致：' + JSON.stringify(registration));
+  if (!registration.team || !registration.driver || !registration.codriver)
+    throw new Error('缺少團隊名稱、賽車手或領航員 Roblox ID，請檢查 FIELD_ALIASES：' + JSON.stringify(registration));
   // Preserve the original response text; car normalization happens in review.
   const id = 'registration_' + Utilities.getUuid().replace(/-/g,'');
   const payload = {
@@ -65,7 +65,7 @@ function onRegistrationSubmit(e) {
       codriverDiscord: {stringValue:registration.codriverDiscord},
       driverERLC: {stringValue:registration.driverERLC},
       codriverERLC: {stringValue:registration.codriverERLC},
-      vehicle: {stringValue:registration.vehicle},
+      vehicle: {stringValue:registration.vehicle || '未填寫'},
       color: {stringValue:registration.color},
       email: {stringValue:registration.email},
       agree: {stringValue:registration.agree},
